@@ -1,1 +1,1 @@
-#解析QRCODE
+# 解析QRCODE
