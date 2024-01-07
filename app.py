@@ -9,6 +9,8 @@ from PIL import Image
 from io import BytesIO
 from functools import wraps
 
+allowed_hosts_global = []
+
 def abort_msg(e):
     """500 bad request for exception
 
@@ -36,6 +38,9 @@ def ping():
     return jsonify({"parsed": 'qww'})
 
 def restrict_hosts(allowed_hosts):
+    global allowed_hosts_global
+    allowed_hosts_global = allowed_hosts  # Keep track of the allowed hosts
+    print(allowed_hosts_global)
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -50,7 +55,7 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/qrcode')
-@restrict_hosts(['192.168.1.1', '10.0.0.1'])
+@restrict_hosts(['192.168.1.1','127.0.0.1', '10.0.0.1'])
 def create_qr_code():
     # Get the text from the query parameter 'code'
     text = request.args.get('code', 'Default Text')

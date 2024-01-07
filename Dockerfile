@@ -14,6 +14,7 @@ COPY . /app
 # 安装 Flask 和 zxing
 RUN pip install Flask zxing
 RUN pip install qrcode[pil]
+RUN pip install matplotlib
 # 公开容器内的端口 5000
 EXPOSE 5002
 
