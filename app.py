@@ -1,8 +1,13 @@
-from flask import Flask, request, jsonify, abort
+from flask import Flask, request, jsonify, abort,send_from_directory
 import zxing
 import os
 import sys
 import traceback
+import matplotlib.pyplot as plt
+import qrcode
+from PIL import Image
+from io import BytesIO
+from functools import wraps
 
 def abort_msg(e):
     """500 bad request for exception
@@ -23,9 +28,47 @@ def abort_msg(e):
     abort(500, errMsg)
 
 app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 @app.route('/ping', methods=['GET'])
 def ping():
     return jsonify({"parsed": 'qww'})
+
+def restrict_hosts(allowed_hosts):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if request.remote_addr not in allowed_hosts:
+                abort(403)
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+@app.route('/qrcode')
+@restrict_hosts(['192.168.1.1', '10.0.0.1'])
+def create_qr_code():
+    # Get the text from the query parameter 'code'
+    text = request.args.get('code', 'Default Text')
+    file_path = "uploads/"+text+".png"
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(text)
+    qr.make(fit=True)
+    # Create an image from the QR Code instance
+    img = qr.make_image(fill_color="black", back_color="white")
+    # Save it somewhere, change the extension as needed
+    img.save(file_path)
+    return jsonify({"img": file_path})
+
 
 
 @app.route('/upload', methods=['POST'])
@@ -53,6 +96,36 @@ def upload_file():
     except Exception as e:
         abort_msg(e)
 
+def create_qr_code(text, file_path):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(text)
+    qr.make(fit=True)
+
+    # Create an image from the QR Code instance
+    img = qr.make_image(fill_color="black", back_color="white")
+    # Save it somewhere, change the extension as needed
+    img.save(file_path)
+        
 if __name__ == '__main__':
     app.debug = True
+    # 要轉換成 QR 碼的文字
+    # text_to_encode = "要轉換成 QR 碼的文字 Your text goes here"
+
+    # # 設定 QR 碼圖片的保存路徑
+    # output_file = "qr_code.png"
+
+    # # 創建 QR 碼
+    # create_qr_code(text_to_encode, output_file)
+
+    # # 顯示 QR 碼圖片
+    # img = Image.open(output_file)
+    # plt.imshow(img)
+    # plt.axis('off')
+    # plt.show()
+
     app.run(host="0.0.0.0",port=5002,debug=True)
