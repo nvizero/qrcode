@@ -55,11 +55,12 @@ def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/qrcode')
-@restrict_hosts(['192.168.1.1','127.0.0.1', '10.0.0.1','115.43.117.105'])
+# @restrict_hosts(['192.168.1.1','127.0.0.1', '10.0.0.1','115.43.117.105'])
 def create_qr_code():
     # Get the text from the query parameter 'code'
     text = request.args.get('code', 'Default Text')
-    file_path = "uploads/"+text+".png"
+    pname = request.args.get('pname', 'ext')
+    file_path = "uploads/"+pname+".png"
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
